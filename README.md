@@ -3,6 +3,7 @@
 **Đề tài:** Xây dựng phần mềm AI (Machine Learning) dự đoán nguy cơ bệnh tiểu đường từ thông số sức khỏe
 
 **Sinh viên:** Đào Đức Hiếu
+
 **Mã sinh viên:** 26ACN021
 
 **Dùng thử trực tuyến:** https://hieuddevops-cntt4.streamlit.app/
