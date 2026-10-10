@@ -4,6 +4,8 @@
 
 **Sinh viên:** Đào Đức Hiếu
 
+**Dùng thử trực tuyến:** https://hieuddevops-cntt4.streamlit.app/
+
 ## PHẦN A. HƯỚNG DẪN CHẠY CHƯƠNG TRÌNH
 
 ### 1. Cấu trúc thư mục bài nộp
