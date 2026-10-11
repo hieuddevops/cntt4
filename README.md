@@ -16,11 +16,10 @@
 README.md                      Tài liệu này: giải thích và hướng dẫn thực hiện
 DaoDucHieu_CNTT4/
 ├── data/CSDL_TieuDuong.csv    Dữ liệu gốc (Bước 2)
-├── src/tien_xu_ly.py          Làm sạch dữ liệu: đồng bộ, xử lý lỗi, mã hóa (Bước 3.1, 3.2)
-├── src/bien_doi.py            Điền thiếu, cắt ngoại lai, chuẩn hóa (Bước 3.1, 3.2)
-├── train.py                   Phân chia dữ liệu, huấn luyện, đánh giá 5 mô hình (Bước 3.3 – 6)
+├── xu_ly.py                   Tiền xử lý: làm sạch, mã hóa, điền thiếu, ngoại lai, chuẩn hóa (Bước 3)
+├── train.py                   Chia dữ liệu, huấn luyện và đánh giá 3 mô hình (Bước 3.3 – 6)
 ├── app.py                     Giao diện nhập thông tin, cảnh báo và giải thích (Bước 7)
-├── outputs/                   Biểu đồ, bảng chỉ số, nhật ký làm sạch, mô hình đã huấn luyện
+├── outputs/                   Mô hình đã huấn luyện, bảng kết quả, biểu đồ
 └── requirements.txt           Danh sách thư viện cần cài
 ```
 
@@ -40,7 +39,7 @@ pip install -r requirements.txt
 python train.py
 ```
 
-Chương trình in kết quả từng bước ra màn hình và lưu vào thư mục DaoDucHieu_CNTT4/outputs/ (log_huan_luyen.txt, ket_qua_test.csv, các biểu đồ .png, mo_hinh_tot_nhat.joblib). Thời gian chạy khoảng 1–2 phút.
+Chương trình in kết quả ra màn hình và lưu vào thư mục DaoDucHieu_CNTT4/outputs/ gồm mo_hinh.joblib, ket_qua_test.csv và 3 biểu đồ .png. Thời gian chạy khoảng 10 giây.
 
 ### 4. Chạy giao diện
 
@@ -96,14 +95,12 @@ Giá trị Glucose = 40.4 mmol/L được **giữ nguyên**. Đây là tăng đ�
 - LDL = 3.45 ở **99,7%** bản ghi, gần như hằng số nên không mang thông tin. Cột này bị **loại bỏ**.
 - Các cột khác cũng có giá trị lặp lại nhiều do điền sẵn (Cholesterol 5.5, Triglycerid 2.1, Acid uric 426.2), nhưng vẫn còn đủ biến thiên nên được giữ lại.
 
-**d) Kiểm tra và xử lý dữ liệu ngoại lai.** Boxplot (hình dưới) cho thấy nhiều ngoại lai ở Creatinine (tới 1.511 µmol/L), AST/ALT (tới 534/580 U/L), Triglycerid… Đây là các giá trị **có thật** ở bệnh nhân suy thận, viêm gan, rối loạn mỡ máu nặng, nên **không xóa**. Thay vào đó, bài làm dùng kỹ thuật **Winsorizing**: cắt giá trị về khoảng phân vị 1% đến 99%, với ngưỡng học từ tập Train. Phương pháp IQR không phù hợp vì nhiều cột có IQR = 0 do giá trị lặp lại; dùng IQR sẽ biến mọi giá trị khác giá trị lặp thành "ngoại lai".
-
-![Boxplot ngoại lai](DaoDucHieu_CNTT4/outputs/02_boxplot_ngoai_lai.png)
+**d) Kiểm tra và xử lý dữ liệu ngoại lai.** Dữ liệu có nhiều ngoại lai ở Creatinine (tới 1.511 µmol/L), AST/ALT (tới 534/580 U/L), Triglycerid… Đây là các giá trị **có thật** ở bệnh nhân suy thận, viêm gan, rối loạn mỡ máu nặng, nên **không xóa**. Thay vào đó, bài làm dùng kỹ thuật **Winsorizing**: cắt giá trị về khoảng phân vị 1% đến 99%, với ngưỡng học từ tập Train. Phương pháp IQR không phù hợp vì nhiều cột có IQR = 0 do giá trị lặp lại; dùng IQR sẽ biến mọi giá trị khác giá trị lặp thành "ngoại lai".
 
 #### 3.2. Biến đổi dữ liệu
 
 - **Mã hóa:** Giới tính được chuyển thành biến nhị phân GioiTinh_Nam (1 là Nam, 0 là Nữ). Nhãn được chuyển thành 1/0.
-- **Chuẩn hóa:** dùng StandardScaler (z-score: x' = (x − μ)/σ), đưa các biến về cùng thang đo. Bước này cần thiết cho Logistic Regression, SVM và KNN vì các chỉ số có thang rất khác nhau (Glucose khoảng 5, Acid uric khoảng 400).
+- **Chuẩn hóa:** dùng StandardScaler (z-score: x' = (x − μ)/σ), đưa các biến về cùng thang đo. Bước này cần thiết cho Logistic Regression và SVM vì các chỉ số có thang rất khác nhau (Glucose khoảng 5, Acid uric khoảng 400).
 - **Chống rò rỉ dữ liệu (data leakage):** các bước phải "học" từ dữ liệu (median, phân vị, μ và σ) được đóng gói trong sklearn **Pipeline**, chỉ `fit` trên tập Train và sau đó áp dụng cho Val/Test. Nhờ vậy, kết quả đánh giá phản ánh đúng khả năng dự đoán trên dữ liệu mới.
 
 #### 3.3. Phân chia dữ liệu
@@ -123,22 +120,18 @@ Chia **phân tầng theo nhãn** (stratified) để tỷ lệ nguy cơ ở các 
 | Logistic Regression | Mô hình tuyến tính cơ sở, dễ giải thích |
 | Random Forest | Tập hợp nhiều cây quyết định, mô hình hóa được ngưỡng và tương tác phi tuyến, ít cần chuẩn hóa |
 | SVM (kernel RBF) | Hiệu quả với ranh giới phi tuyến, dữ liệu vừa phải |
-| KNN | Mô hình dựa trên khoảng cách, dùng để so sánh |
-| Gradient Boosting | Boosting các cây nông, thường cho độ chính xác cao trên dữ liệu dạng bảng |
 
-Do dữ liệu mất cân bằng, các mô hình hỗ trợ tham số này đều dùng `class_weight="balanced"` để tăng trọng số cho lớp "có nguy cơ".
+Do dữ liệu mất cân bằng, cả 3 mô hình đều dùng `class_weight="balanced"` để tăng trọng số cho lớp "có nguy cơ".
 
 ### Bước 5. Huấn luyện mô hình
 
-Mỗi mô hình được huấn luyện trên tập Train với một lưới siêu tham số (grid search). Bộ tham số cho **F1 cao nhất trên tập Validation** được giữ lại:
+Cả 3 mô hình được huấn luyện trên tập Train. Siêu tham số được chọn bằng cách thử nhiều giá trị và giữ bộ cho **F1 cao nhất trên tập Validation**:
 
-| Mô hình | Siêu tham số tốt nhất |
+| Mô hình | Siêu tham số |
 |---|---|
 | Logistic Regression | C = 0.1 |
-| Random Forest | n_estimators = 200, max_depth = None, min_samples_leaf = 1 |
-| SVM (RBF) | C = 0.5, gamma = 0.05 |
-| KNN | k = 5, weights = uniform |
-| Gradient Boosting | n_estimators = 150, learning_rate = 0.05, max_depth = 2 |
+| Random Forest | n_estimators = 200 |
+| SVM (RBF) | C = 0.5, gamma = 0.05 (xác suất được hiệu chỉnh bằng CalibratedClassifierCV) |
 
 ### Bước 6. Đánh giá mô hình
 
@@ -157,24 +150,20 @@ Mỗi mô hình được huấn luyện trên tập Train với một lưới si
 | Logistic Regression | 0.9830 | 0.9422 | 0.9879 | 0.9645 | 0.9935 |
 | **Random Forest** | **0.9972** | **0.9880** | **1.0000** | **0.9940** | **1.0000** |
 | SVM (RBF) | 0.9731 | 0.9679 | 0.9152 | 0.9408 | 0.9952 |
-| KNN | 0.9165 | 0.9206 | 0.7030 | 0.7973 | 0.9546 |
-| Gradient Boosting | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
 
-**Mô hình được chọn: Random Forest.** Mô hình này có F1 cao nhất trên tập Validation (1.0), và việc chọn được thực hiện trước khi nhìn tập Test. Trên tập Test, ma trận nhầm lẫn là TN = 540, FP = 2, **FN = 0**, TP = 165: mô hình không bỏ sót người có nguy cơ nào, chỉ báo nhầm 2 trường hợp. Gradient Boosting đạt kết quả tương đương (khác 2 bản ghi), nên cũng là lựa chọn tốt.
+**Mô hình được chọn: Random Forest.** Mô hình này có F1 cao nhất trên tập Validation (1.0), và việc chọn được thực hiện trước khi nhìn tập Test. Trên tập Test, ma trận nhầm lẫn là TN = 540, FP = 2, **FN = 0**, TP = 165: mô hình không bỏ sót người có nguy cơ nào, chỉ báo nhầm 2 trường hợp.
 
-![So sánh mô hình](DaoDucHieu_CNTT4/outputs/03_so_sanh_mo_hinh.png)
+![So sánh mô hình](DaoDucHieu_CNTT4/outputs/so_sanh_mo_hinh.png)
 
-![Ma trận nhầm lẫn](DaoDucHieu_CNTT4/outputs/04_ma_tran_nham_lan.png)
-
-![Đường cong ROC](DaoDucHieu_CNTT4/outputs/05_roc.png)
+![Ma trận nhầm lẫn](DaoDucHieu_CNTT4/outputs/ma_tran_nham_lan.png)
 
 **Nhận xét:**
 
-- KNN có Recall thấp nhất (0.70) vì dựa trên khoảng cách với mọi đặc trưng như nhau, trong khi chỉ Glucose và HbA1C thực sự quyết định nhãn.
-- Các mô hình cây (RF, GB) vượt trội vì nhãn được xác định bằng **ngưỡng**, mà cây quyết định học ngưỡng rất tự nhiên.
+- SVM có Recall thấp nhất (0.915), tức bỏ sót khoảng 8,5% người có nguy cơ. Trong sàng lọc y tế, đây là nhược điểm lớn.
+- Random Forest vượt trội vì nhãn được xác định bằng **ngưỡng**, mà cây quyết định học ngưỡng rất tự nhiên.
 - **Lý do độ chính xác gần 100%:** kiểm tra cho thấy nhãn trong dữ liệu khớp **100%** với tiêu chuẩn chẩn đoán của Hiệp hội Đái tháo đường Hoa Kỳ (ADA): *Glucose đói ≥ 7.0 mmol/L hoặc HbA1C ≥ 6.5%*. Như vậy mô hình đã "học lại" đúng tiêu chuẩn y khoa từ dữ liệu. Glucose chiếm khoảng 83% mức độ quan trọng (hình dưới).
 
-![Độ quan trọng đặc trưng](DaoDucHieu_CNTT4/outputs/06_do_quan_trong.png)
+![Độ quan trọng đặc trưng](DaoDucHieu_CNTT4/outputs/do_quan_trong.png)
 
 - **Hạn chế:** mô hình chưa dự báo được nguy cơ *trước khi* đường huyết vượt ngưỡng. Muốn làm được điều đó cần dữ liệu theo dõi theo thời gian và các yếu tố như BMI, huyết áp, tiền sử gia đình. Ngoài ra, chỉ khoảng 170 bản ghi có HbA1C đo thật, nên mô hình học chỉ số này còn yếu.
 
@@ -182,7 +171,7 @@ Mỗi mô hình được huấn luyện trên tập Train với một lưới si
 
 Giao diện web được xây dựng bằng **Streamlit** (app.py):
 
-1. **Nhập liệu:** họ tên, tuổi, giới tính và các chỉ số xét nghiệm. HbA1C không bắt buộc.
+1. **Nhập liệu:** tuổi, giới tính và các chỉ số xét nghiệm. HbA1C không bắt buộc.
 2. **Dự đoán:** hiển thị xác suất có nguy cơ do mô hình Random Forest tính ra.
 3. **Sinh cảnh báo theo 3 mức:**
    - 🔴 **Nguy cơ cao** (xác suất ≥ 70%): khuyên đến cơ sở y tế xét nghiệm khẳng định.
@@ -191,9 +180,8 @@ Giao diện web được xây dựng bằng **Streamlit** (app.py):
 
    Bài làm kết hợp **mô hình học máy với luật chuyên gia** (tiêu chuẩn ADA). Mức cảnh báo cuối cùng là mức cao hơn giữa hai nguồn. Ví dụ, người có Glucose 6.5 mmol/L (tiền tiểu đường) được mô hình cho nguy cơ thấp, vì nhãn chỉ đánh dấu ca đã đạt ngưỡng tiểu đường; luật chuyên gia nâng cảnh báo lên "trung bình" để người dùng biết cần theo dõi.
 4. **Giải thích kết quả:**
-   - Đối chiếu **từng chỉ số với khoảng tham chiếu lâm sàng** (bình thường / cao / thấp kèm nhận xét).
+   - Đối chiếu **từng chỉ số với khoảng tham chiếu lâm sàng** (bình thường / cao / thấp), đặc biệt nêu rõ Glucose, HbA1C ở vùng tiền tiểu đường hay đã đạt ngưỡng tiểu đường.
    - **Giải thích cục bộ:** lần lượt thay từng đặc trưng của bệnh nhân bằng giá trị trung vị của tập Train và đo xem xác suất thay đổi bao nhiêu. Kết quả cho biết đặc trưng nào làm tăng hoặc giảm nguy cơ của chính bệnh nhân đó.
-   - **Tóm tắt bằng lời:** nêu chỉ số chính dẫn tới kết luận và các chỉ số bất thường khác cần lưu ý (mỡ máu, chức năng thận, men gan).
 
 **Ví dụ kiểm thử:**
 
