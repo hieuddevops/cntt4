@@ -171,8 +171,8 @@ Cả 3 mô hình được huấn luyện trên tập Train. Siêu tham số đư
 
 Giao diện web được xây dựng bằng **Streamlit** (app.py):
 
-1. **Nhập liệu:** tuổi, giới tính và các chỉ số xét nghiệm. HbA1C không bắt buộc.
-2. **Dự đoán:** hiển thị xác suất có nguy cơ do mô hình Random Forest tính ra.
+1. **Nhập liệu (thanh bên trái):** tuổi, giới tính và các chỉ số xét nghiệm, chia theo nhóm Đường huyết, Mỡ máu, Thận, Gan. HbA1C không bắt buộc. Có nút điền nhanh 3 ca mẫu (Bình thường / Tiền ĐTĐ / Nguy cơ cao) để thử nghiệm.
+2. **Dự đoán:** kết quả cập nhật ngay khi thay đổi chỉ số. Xác suất có nguy cơ do mô hình Random Forest tính ra được hiển thị bằng đồng hồ đo 3 vùng màu.
 3. **Sinh cảnh báo theo 3 mức:**
    - 🔴 **Nguy cơ cao** (xác suất ≥ 70%): khuyên đến cơ sở y tế xét nghiệm khẳng định.
    - 🟠 **Nguy cơ trung bình** (30–70%): khuyên theo dõi, xét nghiệm lại sau 1–3 tháng, điều chỉnh lối sống.
@@ -180,8 +180,10 @@ Giao diện web được xây dựng bằng **Streamlit** (app.py):
 
    Bài làm kết hợp **mô hình học máy với luật chuyên gia** (tiêu chuẩn ADA). Mức cảnh báo cuối cùng là mức cao hơn giữa hai nguồn. Ví dụ, người có Glucose 6.5 mmol/L (tiền tiểu đường) được mô hình cho nguy cơ thấp, vì nhãn chỉ đánh dấu ca đã đạt ngưỡng tiểu đường; luật chuyên gia nâng cảnh báo lên "trung bình" để người dùng biết cần theo dõi.
 4. **Giải thích kết quả:**
-   - Đối chiếu **từng chỉ số với khoảng tham chiếu lâm sàng** (bình thường / cao / thấp), đặc biệt nêu rõ Glucose, HbA1C ở vùng tiền tiểu đường hay đã đạt ngưỡng tiểu đường.
-   - **Giải thích cục bộ:** lần lượt thay từng đặc trưng của bệnh nhân bằng giá trị trung vị của tập Train và đo xem xác suất thay đổi bao nhiêu. Kết quả cho biết đặc trưng nào làm tăng hoặc giảm nguy cơ của chính bệnh nhân đó.
+   - Nêu **lý do** theo tiêu chuẩn ADA khi Glucose hoặc HbA1C ở vùng tiền tiểu đường hay đã đạt ngưỡng tiểu đường.
+   - Đối chiếu **từng chỉ số với khoảng tham chiếu lâm sàng:** mỗi chỉ số là một thanh ngang, vùng xanh là khoảng bình thường, chấm màu là giá trị của bệnh nhân (xanh = bình thường, cam = thấp hoặc tiền ĐTĐ, đỏ = cao).
+   - **Giải thích cục bộ (biểu đồ "Yếu tố ảnh hưởng"):** lần lượt thay từng đặc trưng của bệnh nhân bằng giá trị trung vị của tập Train và đo xem xác suất thay đổi bao nhiêu. Kết quả cho biết đặc trưng nào làm tăng (đỏ) hoặc giảm (xanh) nguy cơ của chính bệnh nhân đó.
+5. **Tab "Về mô hình":** hiển thị bảng kết quả đánh giá trên tập Test và các biểu đồ (so sánh mô hình, độ quan trọng đặc trưng, ma trận nhầm lẫn).
 
 **Ví dụ kiểm thử:**
 
